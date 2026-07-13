@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
+from urllib.parse import urlsplit
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from gopay import enums
 
@@ -25,3 +27,17 @@ class GopayConfig(GopayModel):
     scope: enums.TokenScope = enums.TokenScope.ALL
     language: enums.Language = enums.Language.CZECH
     custom_user_agent: Optional[str] = None
+
+    @field_validator("gateway_url")
+    @classmethod
+    def validate_gateway_url(cls, value: str) -> str:
+        url = urlsplit(value)
+        if url.scheme != "https":
+            raise ValueError("gateway_url must use HTTPS")
+        if not url.hostname:
+            raise ValueError("gateway_url must include a hostname")
+        if url.username is not None or url.password is not None:
+            raise ValueError("gateway_url must not include credentials")
+        if url.query or url.fragment:
+            raise ValueError("gateway_url must not include a query or fragment")
+        return value

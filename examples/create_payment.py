@@ -1,12 +1,16 @@
+import os
+
 import gopay
 from gopay.enums import BankSwiftCode, Currency, Language, PaymentInstrument, Recurrence
 
 payments = gopay.payments(
     {
-        "goid": "my goid",
-        "client_id": "my id",
-        "client_secret": "my secret",
-        "gateway_url": "https://gw.sandbox.gopay.com/",
+        "goid": os.environ["GOID"],
+        "client_id": os.environ["CLIENT_ID"],
+        "client_secret": os.environ["CLIENT_SECRET"],
+        "gateway_url": os.environ.get(
+            "GATEWAY_URL", "https://gw.sandbox.gopay.com/api"
+        ),
     }
 )
 
@@ -50,8 +54,8 @@ response = payments.create_payment(
         ],
         "additional_params": [{"name": "invoicenumber", "value": "2015001003"}],
         "callback": {
-            "return_url": "http://www.your-url.tld/return",
-            "notification_url": "http://www.your-url.tld/notify",
+            "return_url": "https://www.your-url.tld/return",
+            "notification_url": "https://www.your-url.tld/notify",
         },
         "lang": Language.CZECH,  # if lang is not specified, then default lang is used
     }

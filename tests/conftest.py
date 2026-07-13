@@ -7,36 +7,31 @@ from gopay.enums import BankSwiftCode, Currency, Language, PaymentInstrument, Bn
 from gopay.http import Request, Response
 
 
+def sandbox_env(name: str) -> str:
+    value = os.getenv(name)
+    if value:
+        return value
+    pytest.skip(f"{name} is not configured")
+
+
 @pytest.fixture(scope="session")
 def goid() -> str:
-    goid = os.getenv("GOID")
-    if goid is not None:
-        return goid
-    raise TypeError("Could not find GOID env variable")
+    return sandbox_env("GOID")
 
 
 @pytest.fixture(scope="session")
 def client_id() -> str:
-    client_id = os.getenv("CLIENT_ID")
-    if client_id is not None:
-        return client_id
-    raise TypeError("Could not find CLIENT_ID env variable")
+    return sandbox_env("CLIENT_ID")
 
 
 @pytest.fixture(scope="session")
 def client_secret() -> str:
-    client_secret = os.getenv("CLIENT_SECRET")
-    if client_secret is not None:
-        return client_secret
-    raise TypeError("Could not find CLIENT_SECRET env variable")
+    return sandbox_env("CLIENT_SECRET")
 
 
 @pytest.fixture(scope="session")
 def gateway_url() -> str:
-    gateway_url = os.getenv("GATEWAY_URL")
-    if gateway_url is not None:
-        return gateway_url
-    raise TypeError("Could not find API_URL env variable")
+    return sandbox_env("GATEWAY_URL")
 
 
 @pytest.fixture(scope="class")
