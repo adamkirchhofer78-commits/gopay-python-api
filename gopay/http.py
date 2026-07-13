@@ -61,7 +61,7 @@ class AccessToken:
     Class representing the OAUTH Access Token
     """
 
-    token: str
+    token: str = field(repr=False)
     last_updated: datetime
     scope: TokenScope
 
@@ -87,7 +87,7 @@ class ApiClient:
     """
 
     client_id: str
-    client_secret: str
+    client_secret: str = field(repr=False)
     gateway_url: str
     scope: TokenScope
     timeout: int = DEFAULT_TIMEOUT
@@ -135,9 +135,14 @@ class ApiClient:
         """
 
         # Add Bearer authentication to headers if needed
-        headers = request.headers or {}
+        headers = dict(request.headers or {})
         if not request.basic_auth:
-            headers["Authorization"] = f"Bearer {self.token}"
+            token = self.token
+            if token is None:
+                response = Response(raw_body=b"", json={}, status_code=0)
+                self.logger(request, response)
+                return response
+            headers["Authorization"] = f"Bearer {token}"
 
         try:
             # Send the request with the specified parameters
@@ -145,11 +150,13 @@ class ApiClient:
                 method=request.method,
                 url=f"{self.gateway_url}{request.path}",
                 headers=headers,
-                auth=(self.client_id, self.client_secret) if request.basic_auth else None,
+                auth=(
+                    (self.client_id, self.client_secret) if request.basic_auth else None
+                ),
                 data=request.body if request.content_type == ContentType.FORM else None,
                 json=request.body if request.content_type == ContentType.JSON else None,
                 params=request.params,
-                timeout=self.timeout
+                timeout=self.timeout,
             )
 
             # Build Response instance, try to decode body as JSON

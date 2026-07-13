@@ -16,7 +16,7 @@ class GoPay:
     to the API Client
     """
 
-    config: dict
+    config: dict = field(repr=False)
     services: dict = field(default_factory=dict)
     base_url: str = field(default="", init=False)
     api_client: ApiClient = field(init=False)
@@ -25,7 +25,7 @@ class GoPay:
         # Make sure URL will be in the form of example.com/api
         urlparts = urlsplit(self.config["gateway_url"])
         self.base_url = urlunsplit((urlparts.scheme, urlparts.netloc, "/api", "", ""))
-        
+
         # Prepare
         api_client_config = {
             "client_id": self.config["client_id"],
@@ -43,11 +43,8 @@ class GoPay:
         if (cache := self.services.get("cache")) is not None:
             api_client_config.update({"cache": cache})
 
-
         # Create the API client
-        self.api_client = ApiClient(
-            **api_client_config
-        )
+        self.api_client = ApiClient(**api_client_config)
 
     def call(
         self,
@@ -62,7 +59,11 @@ class GoPay:
         """
         # Build the request
         request = Request(
-            method=method, path=path, content_type=content_type, body=body, params=params
+            method=method,
+            path=path,
+            content_type=content_type,
+            body=body,
+            params=params,
         )
 
         user_agent = self.config.get("custom_user_agent")
@@ -75,9 +76,11 @@ class GoPay:
         request.headers = {
             "Accept": "application/json",
             "User-Agent": user_agent,
-            "Accept-Language": "cs-CZ"
-            if self.config["language"] in [Language.CZECH, Language.SLOVAK]
-            else "en-US",
+            "Accept-Language": (
+                "cs-CZ"
+                if self.config["language"] in [Language.CZECH, Language.SLOVAK]
+                else "en-US"
+            ),
         }
         if content_type is not None:
             request.headers["Content-Type"] = content_type

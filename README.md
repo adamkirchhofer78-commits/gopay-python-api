@@ -5,7 +5,7 @@
 
 ## Requirements
 
-- Python >= 3.8.1
+- Python >= 3.10
 - dependencies:
   - [`requests`](https://github.com/kennethreitz/requests)
   - [`deprecated`](https://github.com/tantale/deprecated)
@@ -222,7 +222,15 @@ payments = gopay.payments(
 )
 ```
 
-The default logger uses `logging.debug` to log the responses and requests.
+The default logger uses `logging.debug` to record request methods, paths, and
+response status codes without credentials, authorization headers, payment data,
+or response bodies. Custom loggers are responsible for redacting sensitive data.
+
+### Running integration tests
+
+Copy `tests/.sandbox.env.example` to `tests/.sandbox.env` and replace the
+placeholders with dedicated sandbox credentials. The local environment file is
+ignored by Git. Rotate credentials immediately if they are ever committed.
 
 ## Contributing
 

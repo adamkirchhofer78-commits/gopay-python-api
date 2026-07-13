@@ -18,3 +18,4 @@ venv/
 
 .coverage
 .pytest_cache/
+tests/.sandbox.env

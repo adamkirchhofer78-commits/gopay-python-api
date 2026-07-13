@@ -1,18 +1,22 @@
+import os
+
 import gopay
-from gopay.enums import TokenScope, Language
+from gopay.enums import Language, TokenScope
 
 payments = gopay.payments(
     {
-        "goid": "my goid",
-        "client_id": "my id",
-        "client_secret": "my secret",
-        "gateway_url": "https://gw.sandbox.gopay.com/",
+        "goid": os.environ["GOID"],
+        "client_id": os.environ["CLIENT_ID"],
+        "client_secret": os.environ["CLIENT_SECRET"],
+        "gateway_url": os.environ.get(
+            "GATEWAY_URL", "https://gw.sandbox.gopay.com/api"
+        ),
         "scope": TokenScope.ALL,
         "language": Language.CZECH,
     }
 )
 
-response = payments.get_status("payment id")
+response = payments.get_status(os.environ["PAYMENT_ID"])
 if response.success:
     print(f"Hooray, API returned {response}")
 else:

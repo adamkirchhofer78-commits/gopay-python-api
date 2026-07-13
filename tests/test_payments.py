@@ -1,12 +1,15 @@
 from datetime import datetime
+from unittest.mock import Mock
 
 import pytest
+
 import gopay
 from gopay.enums import Language, TokenScope
 from gopay.http import AccessToken, Request, Response
 from gopay.models import DEFAULT_TIMEOUT
 from gopay.payments import Payments
 from gopay.services import AbstractCache
+
 
 def mock_logger(request: Request, response: Response) -> None:
     pass
@@ -21,6 +24,27 @@ class MockCache(AbstractCache):
 
 
 class TestPayments:
+    def test_rejects_insecure_gateway_url(self):
+        with pytest.raises(ValueError, match="gateway_url must use HTTPS"):
+            gopay.payments(
+                {
+                    "client_id": "client",
+                    "client_secret": "secret",
+                    "goid": 123,
+                    "gateway_url": "http://gw.sandbox.gopay.com/api",
+                }
+            )
+
+    @pytest.mark.parametrize("resource_id", ["1/../../oauth2/token", "1?format=svg", 0])
+    def test_rejects_invalid_payment_ids(self, resource_id):
+        gopay_client = Mock()
+        payments = Payments(gopay_client)
+
+        with pytest.raises(ValueError, match="payment_id must be a positive integer"):
+            payments.get_status(resource_id)
+
+        gopay_client.call.assert_not_called()
+
     def test_base_config(
         self, client_id: str, client_secret: str, goid: str, gateway_url: str
     ):
@@ -46,7 +70,7 @@ class TestPayments:
                 "gateway_url": gateway_url,
                 "scope": TokenScope.ALL,
                 "language": Language.CZECH,
-                "timeout": 300
+                "timeout": 300,
             }
         )
         assert isinstance(payments, Payments)
@@ -163,4 +187,3 @@ class TestPayments:
                     "timeout": -10,
                 }
             )
-

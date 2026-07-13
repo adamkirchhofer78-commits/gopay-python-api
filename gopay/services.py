@@ -33,10 +33,14 @@ class AbstractCache(ABC):
 
 def default_logger(request: Request, response: Response):
     """
-    Logs the HTTP Request and Response when communicating with GoPay using logging.debug
+    Logs request and response metadata without credentials or payment data.
     """
-    logging.debug(f"GoPay HTTP Request: {request}")
-    logging.debug(f"GoPay HTTP Response: {response}")
+    logging.debug(
+        "GoPay HTTP Request: method=%s path=%s",
+        request.method,
+        request.path,
+    )
+    logging.debug("GoPay HTTP Response: status_code=%s", response.status_code)
 
 
 @dataclass

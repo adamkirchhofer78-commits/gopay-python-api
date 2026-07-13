@@ -1,4 +1,5 @@
 import logging
+import os
 
 import pytest
 
@@ -26,14 +27,16 @@ class TestCards:
         assert "id" in response_body
         assert response_body["state"] == "CREATED"
 
-    @pytest.mark.skip(reason="Card token not valid in current sandbox environment")
     def test_create_payment_with_card_token(
         self, payments: Payments, base_payment: dict
     ):
+        card_token = os.getenv("CARD_TOKEN")
+        if card_token is None:
+            pytest.skip("CARD_TOKEN is not configured")
         base_payment["payer"].update(
             {
                 "allowed_payment_instruments": [PaymentInstrument.PAYMENT_CARD],
-                "allowed_card_token": "X5GMEJIPGhRuIBm/Q5G+D6m0WYnjN70YoLFZhN61UeSu9U0TRrrx0T1Xxvqp2dUEwqBjy62stJFLzkMoRxfeoOfetEnJqotVYntw9BFEp3mbYwkTN7XsAU36MbMkYplwsPmXBeQD9XCYUfjXmn16WQ==",
+                "allowed_card_token": card_token,
             }
         )
 
