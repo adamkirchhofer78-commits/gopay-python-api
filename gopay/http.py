@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -10,6 +11,8 @@ from requests import JSONDecodeError
 from gopay.enums import ContentType, TokenScope
 from gopay.models import DEFAULT_TIMEOUT
 from gopay.services import AbstractCache, DefaultCache, LoggerType, default_logger
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -119,7 +122,17 @@ class ApiClient:
                     self.cache.set_token(self.client, token)
                     return token
                 except KeyError:
-                    pass
+                    _logger.error(
+                        "GoPay token request succeeded but the response did not "
+                        "contain an 'access_token' field: %s",
+                        response,
+                    )
+            else:
+                _logger.error(
+                    "GoPay token request failed with status code %s: %s",
+                    response.status_code,
+                    response,
+                )
         return None
 
     @property
@@ -137,7 +150,14 @@ class ApiClient:
         # Add Bearer authentication to headers if needed
         headers = request.headers or {}
         if not request.basic_auth:
-            headers["Authorization"] = f"Bearer {self.token}"
+            token = self.token
+            if token is None:
+                _logger.warning(
+                    "Sending authenticated request to %s without a valid access "
+                    "token; authorization will most likely fail",
+                    request.path,
+                )
+            headers["Authorization"] = f"Bearer {token}"
 
         try:
             # Send the request with the specified parameters
@@ -157,11 +177,20 @@ class ApiClient:
             try:
                 response.json = r.json()
             except JSONDecodeError:
-                pass
+                _logger.debug(
+                    "GoPay response body could not be decoded as JSON (status %s)",
+                    r.status_code,
+                )
 
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as exc:
             # Network errors (SSL, timeout, connection refused, …) — return a
             # failed response so callers can handle it gracefully without raising
+            _logger.error(
+                "GoPay HTTP request to %s%s failed: %s",
+                self.gateway_url,
+                request.path,
+                exc,
+            )
             response = Response(raw_body=b"", json={}, status_code=0)
 
         self.logger(request, response)
