@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from gopay.api import GoPay, Response
 from gopay.enums import ContentType, Currency, QrCodeFormat
+from gopay.utils import build_path, payment_path
 
 
 @dataclass
@@ -27,13 +28,15 @@ class Payments:
             )
         if "lang" not in payment:
             payment.update({"lang": self.gopay.config["language"]})
-        return self.gopay.call("POST", "/payments/payment", ContentType.JSON, payment)
+        return self.gopay.call(
+            "POST", build_path("payments", "payment"), ContentType.JSON, payment
+        )
 
     def get_status(self, payment_id: str | int) -> Response:
         """
         https://doc.gopay.com#payment-inquiry
         """
-        return self.gopay.call("GET", f"/payments/payment/{payment_id}")
+        return self.gopay.call("GET", payment_path(payment_id))
 
     def get_qr_payment(
         self,
@@ -46,7 +49,9 @@ class Payments:
         Optional query parameter: format (png | svg), defaults to png.
         """
         params = {"format": format} if format is not None else None
-        return self.gopay.call("GET", f"/payments/payment/{payment_id}/qr-payment", params=params)
+        return self.gopay.call(
+            "GET", payment_path(payment_id, "qr-payment"), params=params
+        )
 
     def refund_payment(self, payment_id: int | str, amount: int) -> Response:
         """
@@ -54,7 +59,7 @@ class Payments:
         """
         return self.gopay.call(
             "POST",
-            f"/payments/payment/{payment_id}/refund",
+            payment_path(payment_id, "refund"),
             ContentType.FORM,
             {"amount": amount},
         )
@@ -65,7 +70,7 @@ class Payments:
         """
         return self.gopay.call(
             "POST",
-            f"/payments/payment/{payment_id}/create-recurrence",
+            payment_path(payment_id, "create-recurrence"),
             ContentType.JSON,
             payment,
         )
@@ -74,15 +79,13 @@ class Payments:
         """
         https://doc.gopay.com#void-a-recurring-payment
         """
-        return self.gopay.call(
-            "POST", f"/payments/payment/{payment_id}/void-recurrence"
-        )
+        return self.gopay.call("POST", payment_path(payment_id, "void-recurrence"))
 
     def capture_authorization(self, payment_id: int | str) -> Response:
         """
         https://doc.gopay.com#capturing-a-preauthorized-payment
         """
-        return self.gopay.call("post", f"/payments/payment/{payment_id}/capture")
+        return self.gopay.call("post", payment_path(payment_id, "capture"))
 
     def capture_authorization_partial(
         self, payment_id: int | str, payment: dict
@@ -92,7 +95,7 @@ class Payments:
         """
         return self.gopay.call(
             "POST",
-            f"/payments/payment/{payment_id}/capture",
+            payment_path(payment_id, "capture"),
             ContentType.JSON,
             payment,
         )
@@ -101,35 +104,36 @@ class Payments:
         """
         https://doc.gopay.com#voiding-a-preauthorized-payment
         """
-        return self.gopay.call(
-            "POST", f"/payments/payment/{payment_id}/void-authorization"
-        )
+        return self.gopay.call("POST", payment_path(payment_id, "void-authorization"))
 
     def get_card_details(self, card_id: int | str) -> Response:
         """
         https://doc.gopay.com#payment-card-inquiry
         """
-        return self.gopay.call("GET", f"/payments/cards/{card_id}")
+        return self.gopay.call("GET", build_path("payments", "cards", card_id))
 
     def delete_card(self, card_id: int | str) -> Response:
         """
         https://doc.gopay.com#payment-card-deletion
         """
-        return self.gopay.call("DELETE", f"/payments/cards/{card_id}")
+        return self.gopay.call("DELETE", build_path("payments", "cards", card_id))
 
     def get_payment_instruments(self, goid: int | str, currency: Currency) -> Response:
         """
         https://doc.gopay.com#available-payment-methods-for-a-currency
         """
         return self.gopay.call(
-            "GET", f"/eshops/eshop/{goid}/payment-instruments/{currency}"
+            "GET",
+            build_path("eshops", "eshop", goid, "payment-instruments", currency),
         )
 
     def get_payment_instruments_all(self, goid: int | str) -> Response:
         """
         https://doc.gopay.com#all-available-payment-methods
         """
-        return self.gopay.call("GET", f"/eshops/eshop/{goid}/payment-instruments")
+        return self.gopay.call(
+            "GET", build_path("eshops", "eshop", goid, "payment-instruments")
+        )
 
     def get_account_statement(self, statement_request: dict) -> Response:
         """
@@ -142,7 +146,7 @@ class Payments:
     def refund_payment_eet(self, payment_id: int | str, payment_data: dict) -> Response:
         return self.gopay.call(
             "POST",
-            f"/payments/payment/{payment_id}/refund",
+            payment_path(payment_id, "refund"),
             ContentType.JSON,
             payment_data,
         )
@@ -151,10 +155,10 @@ class Payments:
         """
         https://doc.gopay.com/#history-of-refunds
         """
-        return self.gopay.call("GET", f"/payments/payment/{payment_id}/refunds")
+        return self.gopay.call("GET", payment_path(payment_id, "refunds"))
 
     def get_eet_receipt_by_payment_id(self, payment_id: int | str) -> Response:
-        return self.gopay.call("GET", f"/payments/payment/{payment_id}/eet-receipts")
+        return self.gopay.call("GET", payment_path(payment_id, "eet-receipts"))
 
     def find_eet_receipts_by_filter(self, filter: dict) -> Response:
         return self.gopay.call("POST", "/eet-receipts", ContentType.JSON, filter)
