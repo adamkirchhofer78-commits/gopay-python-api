@@ -208,7 +208,5 @@ class ApiClient:
             body={"grant_type": "client_credentials", "scope": self.scope},
             basic_auth=True,
         )
-        # Handle response
-        response = self.send_request(request)
-        self.logger(request, response)
-        return response
+        # Handle response (send_request already logs via self.logger)
+        return self.send_request(request)
